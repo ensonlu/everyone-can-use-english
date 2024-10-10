@@ -1,4 +1,22 @@
 import Markdown from "react-markdown";
+import { visitParents } from "unist-util-visit-parents";
+import { Sentence } from "@renderer/components";
+import { cn } from "@renderer/lib/utils";
+
+function rehypeWrapText() {
+  return function wrapTextTransform(tree: any) {
+    visitParents(tree, "text", (node, ancestors) => {
+      const parent = ancestors.at(-1);
+
+      if (parent.tagName !== "vocabulary") {
+        node.type = "element";
+        node.tagName = "vocabulary";
+        node.properties = { text: node.value };
+        node.children = [{ type: "text", value: node.value }];
+      }
+    });
+  };
+}
 
 export const MarkdownWrapper = ({
   children,
@@ -10,7 +28,8 @@ export const MarkdownWrapper = ({
 }) => {
   return (
     <Markdown
-      className={className}
+      className={cn("prose dark:prose-invert", className)}
+      rehypePlugins={[rehypeWrapText]}
       components={{
         a({ node, children, ...props }) {
           try {
@@ -20,6 +39,9 @@ export const MarkdownWrapper = ({
           } catch (e) {}
 
           return <a {...props}>{children}</a>;
+        },
+        vocabulary({ node, children, ...props }) {
+          return <Sentence sentence={props.text} />;
         },
       }}
       {...props}

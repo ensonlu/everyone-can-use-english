@@ -13,7 +13,7 @@ export * from "./learning-language-settings";
 export * from "./default-engine-settings";
 export * from "./openai-settings";
 export * from "./library-settings";
-export * from "./whisper-settings";
+export * from "./stt-settings";
 
 export * from "./user-settings";
 export * from "./email-settings";
@@ -31,3 +31,6 @@ export * from "./whisper-model-options";
 export * from "./network-state";
 
 export * from "./recorder-settings";
+
+export * from "./vocabulary-settings";
+export * from "./dict-settings";

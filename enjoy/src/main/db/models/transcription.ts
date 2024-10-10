@@ -11,13 +11,14 @@ import {
   DataType,
   Unique,
 } from "sequelize-typescript";
-import { Audio, Video } from "@main/db/models";
+import { Audio, UserSetting, Video } from "@main/db/models";
 import mainWindow from "@main/window";
 import log from "@main/logger";
 import { Client } from "@/api";
 import { PROCESS_TIMEOUT } from "@/constants";
 import settings from "@main/settings";
 import { AlignmentResult } from "echogarden/dist/api/Alignment";
+import { createHash } from "crypto";
 
 const logger = log.scope("db/models/transcription");
 @Table({
@@ -71,6 +72,13 @@ export class Transcription extends Model<Transcription> {
   video: Video;
 
   @Column(DataType.VIRTUAL)
+  get md5(): string {
+    // Calculate md5 of result
+    if (!this.result) return null;
+    return createHash("md5").update(JSON.stringify(this.result)).digest("hex");
+  }
+
+  @Column(DataType.VIRTUAL)
   get isSynced(): boolean {
     return Boolean(this.syncedAt) && this.syncedAt >= this.updatedAt;
   }
@@ -81,7 +89,7 @@ export class Transcription extends Model<Transcription> {
 
     const webApi = new Client({
       baseUrl: settings.apiUrl(),
-      accessToken: settings.getSync("user.accessToken") as string,
+      accessToken: (await UserSetting.accessToken()) as string,
       logger,
     });
     return webApi.syncTranscription(this.toJSON()).then(() => {

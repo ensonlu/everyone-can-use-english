@@ -5,6 +5,7 @@ import sup from "markdown-it-sup";
 import sub from "markdown-it-sub";
 import mark from "markdown-it-mark";
 import ins from "markdown-it-ins";
+import carousel from "./lib/markdown-it-carousel";
 
 // import markdownit from 'markdown-it'
 
@@ -95,8 +96,18 @@ export default withMermaid(
             collapsed: true,
             items: [
               {
-                text: "1. 音素音标",
-                link: "/sounds-of-american-english/1-phonemes",
+                text: "1. 基础",
+                link: "/sounds-of-american-english/1-basics",
+                items: [
+                  {
+                    text: "1.1. 音素音标",
+                    link: "/sounds-of-american-english/1.1-phonemes",
+                  },
+                  {
+                    text: "1.2. 英文字母",
+                    link: "/sounds-of-american-english/1.2-alphabets",
+                  },
+                ],
               },
               {
                 text: "2. 发声器官",
@@ -140,14 +151,13 @@ export default withMermaid(
                         text: "3.1.7. aɪ... oʊ",
                         link: "/sounds-of-american-english/3.1.7-aɪ",
                       },
-                    ]
+                    ],
                   },
                   {
                     text: "3.2. 辅音",
                     collapsed: true,
                     link: "/sounds-of-american-english/3.2-consonants",
                     items: [
-
                       {
                         text: "3.2.1. p/b",
                         link: "/sounds-of-american-english/3.2.1-pb",
@@ -199,12 +209,16 @@ export default withMermaid(
                       {
                         text: "3.2.13. w, j",
                         link: "/sounds-of-american-english/3.2.13-wj",
-                      },                    
+                      },
                       {
                         text: "3.2.14. h",
                         link: "/sounds-of-american-english/3.2.14-h",
                       },
                     ],
+                  },
+                  {
+                    text: "3.3. 变体",
+                    link: "/sounds-of-american-english/3.3-variations",
                   },
                 ],
               },
@@ -241,11 +255,53 @@ export default withMermaid(
               },
               {
                 text: "6. 词汇构建",
+                collapsed: true,
                 link: "/sounds-of-american-english/6-vocabulary",
+                items: [
+                  {
+                    text: "6.1. 有效记忆单词",
+                    link: "/sounds-of-american-english/6.1-effectiveness",
+                  },
+                  {
+                    text: "6.2. 多音拼写",
+                    link: "/sounds-of-american-english/6.2-polyphonic-spellings",
+                  },
+                  {
+                    text: "6.3. 常见复合词汇",
+                    link: "/sounds-of-american-english/6.3-compound-words",
+                  },
+                  {
+                    text: "6.4. 常见词根词缀",
+                    link: "/sounds-of-american-english/6.4-parts-of-words",
+                  },
+                ],
               },
               {
                 text: "7. 从此之后",
                 link: "/sounds-of-american-english/7-whats-next",
+              },
+              {
+                text: "8. 附录",
+                collapsed: true,
+                link: "/sounds-of-american-english/8-appendix",
+                items: [
+                  {
+                    text: "8.1. 输入音标与特殊符号",
+                    link: "/sounds-of-american-english/8.1-inputting-phonemes-and-symbols",
+                  },
+                  {
+                    text: "8.2. 获取 CEPD 音标",
+                    link: "/sounds-of-american-english/8.2-cepd-phonetics-and-sound",
+                  },
+                  {
+                    text: "8.3. 音标练习",
+                    link: "/sounds-of-american-english/8.3-phoneme-exercises",
+                  },
+                  {
+                    text: "8.4. 每日练习语音生成",
+                    link: "/sounds-of-american-english/8.4-daily-speech-exercises",
+                  },
+                ],
               },
             ],
           },
@@ -369,8 +425,8 @@ export default withMermaid(
                   },
                 ],
               },
-            ]
-          }
+            ],
+          },
         ],
 
         "/enjoy-app/": [
@@ -428,7 +484,6 @@ export default withMermaid(
             link: "/intro",
           },
         ],
-
       },
 
       socialLinks: [
@@ -440,7 +495,7 @@ export default withMermaid(
     },
 
     sitemap: {
-      hostname: 'https://1000h.org'
+      hostname: "https://1000h.org",
     },
 
     lastUpdated: true,
@@ -455,10 +510,11 @@ export default withMermaid(
         md.use(sup);
         md.use(mark);
         md.use(ins);
+        md.use(carousel);
       },
       toc: {
-        level: [1, 2, 3]
-      }
+        level: [1, 2, 3],
+      },
     },
   })
 );

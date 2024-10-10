@@ -14,7 +14,6 @@ import settings from "@main/settings";
 import downloader from "@main/downloader";
 import whisper from "@main/whisper";
 import fs from "fs-extra";
-import "@main/i18n";
 import log from "@main/logger";
 import { REPO_URL, WS_URL } from "@/constants";
 import { AudibleProvider, TedProvider, YoutubeProvider } from "@main/providers";
@@ -23,6 +22,10 @@ import { Waveform } from "./waveform";
 import url from "url";
 import echogarden from "./echogarden";
 import camdict from "./camdict";
+import dict from "./dict";
+import mdict from "./mdict";
+import decompresser from "./decompresser";
+import { UserSetting } from "@main/db/models";
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,7 +43,7 @@ const main = {
   init: () => {},
 };
 
-main.init = () => {
+main.init = async () => {
   if (main.win) {
     main.win.show();
     return;
@@ -50,6 +53,8 @@ main.init = () => {
   db.registerIpcHandlers();
 
   camdict.registerIpcHandlers();
+  dict.registerIpcHandlers();
+  mdict.registerIpcHandlers();
 
   // Prepare Settings
   settings.registerIpcHandlers();
@@ -65,6 +70,8 @@ main.init = () => {
 
   // Downloader
   downloader.registerIpcHandlers();
+
+  decompresser.registerIpcHandlers();
 
   // ffmpeg
   ffmpeg.registerIpcHandlers();
@@ -288,8 +295,12 @@ main.init = () => {
     };
   });
 
-  ipcMain.handle("app-reset", () => {
-    fs.removeSync(settings.userDataPath());
+  ipcMain.handle("app-reset", async () => {
+    const userDataPath = settings.userDataPath();
+
+    await db.disconnect();
+
+    fs.removeSync(userDataPath);
     fs.removeSync(settings.file());
 
     app.relaunch();
@@ -297,10 +308,7 @@ main.init = () => {
   });
 
   ipcMain.handle("app-reset-settings", () => {
-    fs.removeSync(settings.file());
-
-    app.relaunch();
-    app.exit();
+    UserSetting.clear();
   });
 
   ipcMain.handle("app-relaunch", () => {

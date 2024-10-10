@@ -14,8 +14,17 @@ export class Client {
     accessToken?: string;
     logger?: any;
     locale?: "en" | "zh-CN";
+    onError?: (err: any) => void;
+    onSuccess?: (res: any) => void;
   }) {
-    const { baseUrl, accessToken, logger, locale = "en" } = options;
+    const {
+      baseUrl,
+      accessToken,
+      logger,
+      locale = "en",
+      onError,
+      onSuccess,
+    } = options;
     this.baseUrl = baseUrl;
     this.logger = logger || console;
 
@@ -40,6 +49,10 @@ export class Client {
     });
     this.api.interceptors.response.use(
       (response) => {
+        if (onSuccess) {
+          onSuccess(response);
+        }
+
         this.logger.debug(
           response.status,
           response.config.method.toUpperCase(),
@@ -48,14 +61,29 @@ export class Client {
         return camelcaseKeys(response.data, { deep: true });
       },
       (err) => {
+        if (onError) {
+          onError(err);
+        }
+
         if (err.response) {
           this.logger.error(
             err.response.status,
             err.response.config.method.toUpperCase(),
-            err.response.config.baseURL + err.response.config.url
+            err.response.config.baseURL + err.response.config.url,
+            err.response.data
           );
-          this.logger.error(err.response.data);
-          return Promise.reject(new Error(err.response.data));
+
+          if (err.response.data) {
+            if (typeof err.response.data === "string") {
+              err.message = err.response.data;
+            } else if (typeof err.response.data === "object") {
+              err.message =
+                err.response.data.error ||
+                err.response.data.message ||
+                JSON.stringify(err.response.data);
+            }
+          }
+          return Promise.reject(err);
         }
 
         this.logger.error(err.message);
@@ -470,7 +498,7 @@ export class Client {
     return this.api.get(`/api/payments/${id}`);
   }
 
-  mineSegments(params?: {
+  segments(params?: {
     page?: number;
     segmentIndex?: number;
     targetId?: string;
@@ -480,7 +508,7 @@ export class Client {
       segments: SegmentType[];
     } & PagyResponseType
   > {
-    return this.api.get("/api/mine/segments", {
+    return this.api.get("/api/segments", {
       params: decamelizeKeys(params),
     });
   }

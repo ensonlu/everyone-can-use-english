@@ -3,6 +3,7 @@ import { useContext, useState } from "react";
 import { WavesurferPlayer } from "@/renderer/components/misc";
 import { AppSettingsProviderContext } from "@/renderer/context";
 import { convertWordIpaToNormal } from "@/utils";
+import { Vocabulary } from "@renderer/components";
 
 export const NoteSemgent = (props: {
   segment: SegmentType;
@@ -44,18 +45,18 @@ export const NoteSemgent = (props: {
             id={`note-segment-${segment.id}-${index}`}
           >
             <div
-              className={`select-text font-serif text-lg xl:text-xl 2xl:text-2xl p-1 ${
+              className={`select-text font-serif text-base xl:text-lg 2xl:text-lg p-1 ${
                 notedquoteIndices.includes(index)
                   ? "border-b border-red-500 border-dashed"
                   : ""
               }
           `}
             >
-              {word}
+              <Vocabulary word={word} context={caption.text} />
             </div>
 
             <div
-              className={`select-text text-sm 2xl:text-base text-muted-foreground font-code mb-1 ${
+              className={`select-text text-xs 2xl:text-sm text-muted-foreground font-code mb-1 ${
                 index === 0 ? "before:content-['/']" : ""
               } ${
                 index === caption.timeline.length - 1

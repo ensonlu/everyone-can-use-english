@@ -18,6 +18,8 @@ import {
   LearningLanguageSettings,
   NetworkState,
   RecorderSettings,
+  VocabularySettings,
+  DictSettings,
 } from "@renderer/components";
 import { useState } from "react";
 import { Tooltip } from "react-tooltip";
@@ -41,7 +43,20 @@ export const Preferences = () => {
           <Separator />
           <DefaultEngineSettings />
           <Separator />
-          <OpenaiSettings />
+        </div>
+      ),
+    },
+    {
+      value: "dict",
+      label: t("dictSettingsShort"),
+      component: () => (
+        <div className="pr-1">
+          <div className="font-semibold mb-4 capitilized">
+            {t("dictSettings")}
+          </div>
+          <VocabularySettings />
+          <Separator />
+          <DictSettings />
           <Separator />
         </div>
       ),
@@ -59,6 +74,8 @@ export const Preferences = () => {
           <ProxySettings />
           <Separator />
           <NetworkState />
+          <Separator />
+          <OpenaiSettings />
           <Separator />
           <RecorderSettings />
           <Separator />

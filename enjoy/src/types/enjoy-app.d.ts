@@ -78,10 +78,16 @@ type EnjoyAppType = {
   onNotification: (
     callback: (event, notification: NotificationType) => void
   ) => void;
+  lookup: (
+    selection: string,
+    context: string,
+    position: { x: number; y: number }
+  ) => void;
   onLookup: (
     callback: (
-      event,
+      event: IpcRendererEvent,
       selection: string,
+      context: string,
       position: { x: number; y: number }
     ) => void
   ) => void;
@@ -109,7 +115,7 @@ type EnjoyAppType = {
     ) => Promise<Electron.MessageBoxReturnValue>;
     showErrorBox: (title: string, content: string) => Promise<void>;
   };
-  settings: {
+  appSettings: {
     get: (key: string) => Promise<any>;
     set: (key: string, value: any) => Promise<void>;
     getLibrary: () => Promise<string>;
@@ -117,21 +123,13 @@ type EnjoyAppType = {
     getUser: () => Promise<UserType>;
     setUser: (user: UserType) => Promise<void>;
     getUserDataPath: () => Promise<string>;
-    getDefaultEngine: () => Promise<string>;
-    setDefaultEngine: (string) => Promise<string>;
-    getGptEngine: () => Promise<GptEngineSettingType>;
-    setGptEngine: (GptEngineSettingType) => Promise<GptEngineSettingType>;
-    getLlm: (provider: SupportedLlmProviderType) => Promise<LlmProviderType>;
-    setLlm: (
-      provider: SupportedLlmProviderType,
-      LlmProviderType
-    ) => Promise<void>;
-    getLanguage: () => Promise<string>;
-    switchLanguage: (language: string) => Promise<void>;
-    getDefaultHotkeys: () => Promise<Record<string, string> | undefined>;
-    setDefaultHotkeys: (records: Record<string, string>) => Promise<void>;
     getApiUrl: () => Promise<string>;
     setApiUrl: (url: string) => Promise<void>;
+    getSessions: () => Promise<{ id: string }[]>;
+  };
+  userSettings: {
+    get: (key: UserSettingKeyEnum) => Promise<any>;
+    set: (key: UserSettingKeyEnum, value: any) => Promise<void>;
   };
   fs: {
     ensureDir: (path: string) => Promise<boolean>;
@@ -140,7 +138,8 @@ type EnjoyAppType = {
     join: (...paths: string[]) => Promise<string>;
   };
   db: {
-    init: () => Promise<DbState>;
+    connect: () => Promise<DbState>;
+    disconnect: () => Promise<void>;
     onTransaction: (
       callback: (event, state: TransactionStateType) => void
     ) => Promise<void>;
@@ -148,6 +147,19 @@ type EnjoyAppType = {
   };
   camdict: {
     lookup: (word: string) => Promise<CamdictWordType | null>;
+  };
+  mdict: {
+    remove: (mdict: MDict) => Promise<void>;
+    getResource: (key: string, mdict: MDict) => Promise<string | null>;
+    lookup: (word: string, mdict: MDict) => Promise<string | null>;
+    import: (pathes: string[]) => Promise<MDict>;
+  };
+  dict: {
+    getDicts: () => Promise<Dict[]>;
+    remove: (dict: Dict) => Promise<void>;
+    getResource: (key: string, dict: Dict) => Promise<string | null>;
+    lookup: (word: string, dict: Dict) => Promise<string | null>;
+    import: (path: string) => Promise<void>;
   };
   audios: {
     findAll: (params: any) => Promise<AudioType[]>;
@@ -209,6 +221,7 @@ type EnjoyAppType = {
       targetId: string,
       targetType
     ) => Promise<SegementRecordingStatsType>;
+    export: (targetId: string, targetType: string) => Promise<string>;
   };
   pronunciationAssessments: {
     findAll: (params: any) => Promise<PronunciationAssessmentType[]>;
@@ -223,6 +236,7 @@ type EnjoyAppType = {
     create: (params: any) => Promise<ConversationType>;
     update: (id: string, params: any) => Promise<ConversationType>;
     destroy: (id: string) => Promise<void>;
+    migrate: (id: string) => Promise<void>;
   };
   messages: {
     findAll: (params: any) => Promise<MessageType[]>;
@@ -273,9 +287,6 @@ type EnjoyAppType = {
     config: () => Promise<WhisperConfigType>;
     check: () => Promise<{ success: boolean; log: string }>;
     setModel: (model: string) => Promise<WhisperConfigType>;
-    setService: (
-      service: WhisperConfigType["service"]
-    ) => Promise<WhisperConfigType>;
     transcribe: (
       params: {
         file?: string;
@@ -299,10 +310,19 @@ type EnjoyAppType = {
       options?: string[]
     ) => Promise<string>;
   };
+  decompress: {
+    onComplete: (callback: (event, task: DecompressTask) => void) => void;
+    onUpdate: (callback: (event, tasks: DecompressTask[]) => void) => void;
+    dashboard: () => Promise<DecompressTask[]>;
+    removeAllListeners: () => void;
+  };
   download: {
     onState: (callback: (event, state) => void) => void;
     start: (url: string, savePath?: string) => Promise<string | undefined>;
     cancel: (filename: string) => Promise<void>;
+    pause: (filename: string) => Promis<void>;
+    resume: (filename: string) => Promise<void>;
+    remove: (filename: string) => Promise<void>;
     cancelAll: () => void;
     dashboard: () => Promise<DownloadStateType[]>;
     removeAllListeners: () => void;
@@ -366,6 +386,13 @@ type EnjoyAppType = {
     findOne: (params: any) => Promise<ChatAgentType>;
     create: (params: any) => Promise<ChatAgentType>;
     update: (id: string, params: any) => Promise<ChatAgentType>;
+    destroy: (id: string) => Promise<void>;
+  };
+  chatMembers: {
+    findAll: (params: any) => Promise<ChatMemberType[]>;
+    findOne: (params: any) => Promise<ChatMemberType>;
+    create: (params: any) => Promise<ChatMemberType>;
+    update: (id: string, params: any) => Promise<ChatMemberType>;
     destroy: (id: string) => Promise<void>;
   };
   chatMessages: {

@@ -141,10 +141,16 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
   onNotification: (
     callback: (event: IpcRendererEvent, notification: NotificationType) => void
   ) => ipcRenderer.on("on-notification", callback),
+  lookup: (
+    selection: string,
+    context: string,
+    position: { x: number; y: number }
+  ) => ipcRenderer.emit("on-lookup", null, selection, context, position),
   onLookup: (
     callback: (
       event: IpcRendererEvent,
       selection: string,
+      context: string,
       position: { x: number; y: number }
     ) => void
   ) => ipcRenderer.on("on-lookup", callback),
@@ -158,6 +164,9 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
       position: { x: number; y: number }
     ) => void
   ) => ipcRenderer.on("on-translate", callback),
+  offTranslate: () => {
+    ipcRenderer.removeAllListeners("on-translate");
+  },
   shell: {
     openExternal: (url: string) =>
       ipcRenderer.invoke("shell-open-external", url),
@@ -173,63 +182,44 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
     showErrorBox: (title: string, content: string) =>
       ipcRenderer.invoke("dialog-show-error-box", title, content),
   },
-  settings: {
+  appSettings: {
     get: (key: string) => {
-      return ipcRenderer.invoke("settings-get", key);
+      return ipcRenderer.invoke("app-settings-get", key);
     },
     set: (key: string, value: any) => {
-      return ipcRenderer.invoke("settings-set", key, value);
+      return ipcRenderer.invoke("app-settings-set", key, value);
     },
     getLibrary: () => {
-      return ipcRenderer.invoke("settings-get-library");
+      return ipcRenderer.invoke("app-settings-get-library");
     },
     setLibrary: (library: string) => {
-      return ipcRenderer.invoke("settings-set-library", library);
+      return ipcRenderer.invoke("app-settings-set-library", library);
+    },
+    getSessions: () => {
+      return ipcRenderer.invoke("app-settings-get-sessions");
     },
     getUser: () => {
-      return ipcRenderer.invoke("settings-get-user");
+      return ipcRenderer.invoke("app-settings-get-user");
     },
     setUser: (user: UserType) => {
-      return ipcRenderer.invoke("settings-set-user", user);
+      return ipcRenderer.invoke("app-settings-set-user", user);
     },
     getUserDataPath: () => {
-      return ipcRenderer.invoke("settings-get-user-data-path");
-    },
-    getDefaultEngine: () => {
-      return ipcRenderer.invoke("settings-get-default-engine");
-    },
-    setDefaultEngine: (engine: "enjoyai" | "openai") => {
-      return ipcRenderer.invoke("settings-set-default-engine", engine);
-    },
-    getGptEngine: () => {
-      return ipcRenderer.invoke("settings-get-gpt-engine");
-    },
-    setGptEngine: (engine: GptEngineSettingType) => {
-      return ipcRenderer.invoke("settings-set-gpt-engine", engine);
-    },
-    getLlm: (provider: string) => {
-      return ipcRenderer.invoke("settings-get-llm", provider);
-    },
-    setLlm: (provider: string, config: LlmProviderType) => {
-      return ipcRenderer.invoke("settings-set-llm", provider, config);
-    },
-    getLanguage: (language: string) => {
-      return ipcRenderer.invoke("settings-get-language", language);
-    },
-    switchLanguage: (language: string) => {
-      return ipcRenderer.invoke("settings-switch-language", language);
-    },
-    getDefaultHotkeys: () => {
-      return ipcRenderer.invoke("settings-get-default-hotkeys");
-    },
-    setDefaultHotkeys: (records: Record<string, string>) => {
-      return ipcRenderer.invoke("settings-set-default-hotkeys", records);
+      return ipcRenderer.invoke("app-settings-get-user-data-path");
     },
     getApiUrl: () => {
-      return ipcRenderer.invoke("settings-get-api-url");
+      return ipcRenderer.invoke("app-settings-get-api-url");
     },
     setApiUrl: (url: string) => {
-      return ipcRenderer.invoke("settings-set-api-url", url);
+      return ipcRenderer.invoke("app-settings-set-api-url", url);
+    },
+  },
+  userSettings: {
+    get: (key: string) => {
+      return ipcRenderer.invoke("user-settings-get", key);
+    },
+    set: (key: string, value: any) => {
+      return ipcRenderer.invoke("user-settings-set", key, value);
     },
   },
   path: {
@@ -238,7 +228,8 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
     },
   },
   db: {
-    init: () => ipcRenderer.invoke("db-init"),
+    connect: () => ipcRenderer.invoke("db-connect"),
+    disconnect: () => ipcRenderer.invoke("db-disconnect"),
     onTransaction: (
       callback: (
         event: IpcRendererEvent,
@@ -257,6 +248,23 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
     lookup: (word: string) => {
       return ipcRenderer.invoke("camdict-lookup", word);
     },
+  },
+  mdict: {
+    remove: (dict: Dict) => ipcRenderer.invoke("mdict-remove", dict),
+    getResource: (key: string, dict: Dict) =>
+      ipcRenderer.invoke("mdict-read-file", key, dict),
+    lookup: (word: string, dict: Dict) =>
+      ipcRenderer.invoke("mdict-lookup", word, dict),
+    import: (pathes: string[]) => ipcRenderer.invoke("mdict-import", pathes),
+  },
+  dict: {
+    getDicts: () => ipcRenderer.invoke("dict-list"),
+    remove: (dict: Dict) => ipcRenderer.invoke("dict-remove", dict),
+    getResource: (key: string, dict: Dict) =>
+      ipcRenderer.invoke("dict-read-file", key, dict),
+    lookup: (word: string, dict: Dict) =>
+      ipcRenderer.invoke("dict-lookup", word, dict),
+    import: (path: string) => ipcRenderer.invoke("dict-import", path),
   },
   audios: {
     findAll: (params: {
@@ -362,6 +370,9 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
         targetType
       );
     },
+    export: (targetId: string, targetType: string) => {
+      return ipcRenderer.invoke("recordings-export", targetId, targetType);
+    },
   },
   conversations: {
     findAll: (params: { where?: any; offset?: number; limit?: number }) => {
@@ -378,6 +389,9 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
     },
     destroy: (id: string) => {
       return ipcRenderer.invoke("conversations-destroy", id);
+    },
+    migrate: (id: string) => {
+      return ipcRenderer.invoke("conversations-migrate", id);
     },
   },
   pronunciationAssessments: {
@@ -486,9 +500,6 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
     setModel: (model: string) => {
       return ipcRenderer.invoke("whisper-set-model", model);
     },
-    setService: (service: string) => {
-      return ipcRenderer.invoke("whisper-set-service", service);
-    },
     check: () => {
       return ipcRenderer.invoke("whisper-check");
     },
@@ -526,28 +537,38 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
       return ipcRenderer.invoke("ffmpeg-transcode", input, output, options);
     },
   },
+  decompress: {
+    onComplete: (
+      callback: (event: IpcRendererEvent, task: DecompressTask) => void
+    ) => ipcRenderer.on("decompress-task-done", callback),
+    onUpdate: (
+      callback: (event: IpcRendererEvent, tasks: DecompressTask[]) => void
+    ) => ipcRenderer.on("decompress-tasks-update", callback),
+    dashboard: () => ipcRenderer.invoke("decompress-tasks"),
+    removeAllListeners: () => {
+      ipcRenderer.removeAllListeners("decompress-tasks-update");
+      ipcRenderer.removeAllListeners("decompress-tasks-done");
+    },
+  },
   download: {
     onState: (
       callback: (event: IpcRendererEvent, state: DownloadStateType) => void
     ) => ipcRenderer.on("download-on-state", callback),
-    start: (url: string, savePath?: string) => {
-      return ipcRenderer.invoke("download-start", url, savePath);
-    },
-    printAsPdf: (content: string, savePath: string) => {
-      return ipcRenderer.invoke("print-as-pdf", content, savePath);
-    },
-    cancel: (filename: string) => {
-      ipcRenderer.invoke("download-cancel", filename);
-    },
-    cancelAll: () => {
-      ipcRenderer.invoke("download-cancel-all");
-    },
-    dashboard: () => {
-      return ipcRenderer.invoke("download-dashboard");
-    },
-    removeAllListeners: () => {
-      ipcRenderer.removeAllListeners("download-on-error");
-    },
+    start: (url: string, savePath?: string) =>
+      ipcRenderer.invoke("download-start", url, savePath),
+    printAsPdf: (content: string, savePath: string) =>
+      ipcRenderer.invoke("print-as-pdf", content, savePath),
+    cancel: (filename: string) =>
+      ipcRenderer.invoke("download-cancel", filename),
+    pause: (filename: string) => ipcRenderer.invoke("download-pause", filename),
+    remove: (filename: string) =>
+      ipcRenderer.invoke("download-remove", filename),
+    resume: (filename: string) =>
+      ipcRenderer.invoke("download-resume", filename),
+    cancelAll: () => ipcRenderer.invoke("download-cancel-all"),
+    dashboard: () => ipcRenderer.invoke("download-dashboard"),
+    removeAllListeners: () =>
+      ipcRenderer.removeAllListeners("download-on-error"),
   },
   cacheObjects: {
     get: (key: string) => {
@@ -661,6 +682,23 @@ contextBridge.exposeInMainWorld("__ENJOY_APP__", {
     },
     destroy: (id: string) => {
       return ipcRenderer.invoke("chat-agents-destroy", id);
+    },
+  },
+  chatMembers: {
+    findAll: (params: any) => {
+      return ipcRenderer.invoke("chat-members-find-all", params);
+    },
+    findOne: (params: any) => {
+      return ipcRenderer.invoke("chat-members-find-one", params);
+    },
+    create: (params: any) => {
+      return ipcRenderer.invoke("chat-members-create", params);
+    },
+    update: (id: string, params: any) => {
+      return ipcRenderer.invoke("chat-members-update", id, params);
+    },
+    destroy: (id: string) => {
+      return ipcRenderer.invoke("chat-members-destroy", id);
     },
   },
   chatMessages: {

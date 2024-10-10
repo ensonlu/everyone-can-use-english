@@ -13,10 +13,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@renderer/components/ui";
-import {
-  ConversationCard,
-  ConversationForm,
-} from "@renderer/components";
+import { ConversationCard, ConversationForm } from "@renderer/components";
 import { useState, useEffect, useContext, useReducer } from "react";
 import { ChevronLeftIcon, LoaderIcon } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -32,7 +29,7 @@ export default () => {
   const [searchParams] = useSearchParams();
   const { addDblistener, removeDbListener } = useContext(DbProviderContext);
   const { EnjoyApp, webApi } = useContext(AppSettingsProviderContext);
-  const { currentEngine } = useContext(AISettingsProviderContext);
+  const { currentGptEngine } = useContext(AISettingsProviderContext);
   const [conversations, dispatchConversations] = useReducer(
     conversationsReducer,
     []
@@ -45,12 +42,13 @@ export default () => {
     ttsPreset: {
       key: "tts",
       name: "TTS",
-      engine: currentEngine?.name,
+      engine: currentGptEngine?.name,
       configuration: {
         type: "tts",
         tts: {
-          engine: currentEngine?.name,
-          model: currentEngine?.name === "enjoyai" ? "openai/tts-1" : "tts-1",
+          engine: currentGptEngine?.name,
+          model:
+            currentGptEngine?.name === "enjoyai" ? "openai/tts-1" : "tts-1",
           voice: "alloy",
         },
       },
@@ -92,7 +90,7 @@ export default () => {
       .findAll({
         order: [["updatedAt", "DESC"]],
         limit,
-        offset: conversations.length,
+        offset: conversations?.length || 0,
       })
       .then((_conversations) => {
         if (_conversations.length === 0) {
@@ -136,27 +134,27 @@ export default () => {
     let presets = GPT_PRESETS;
     let defaultGptPreset = {
       key: "custom",
-      engine: currentEngine.name,
+      engine: currentGptEngine.name,
       name: t("custom"),
       configuration: {
         type: "gpt",
-        engine: currentEngine.name,
-        model: currentEngine.models.default,
+        engine: currentGptEngine.name,
+        model: currentGptEngine.models.default,
         tts: {
-          engine: currentEngine.name,
-          model: currentEngine.name === "enjoyai" ? "openai/tts-1" : "tts-1",
+          engine: currentGptEngine.name,
+          model: currentGptEngine.name === "enjoyai" ? "openai/tts-1" : "tts-1",
         },
       },
     };
     let defaultTtsPreset = {
       key: "tts",
       name: "TTS",
-      engine: currentEngine.name,
+      engine: currentGptEngine.name,
       configuration: {
         type: "tts",
         tts: {
-          engine: currentEngine.name,
-          model: currentEngine.name === "enjoyai" ? "openai/tts-1" : "tts-1",
+          engine: currentGptEngine.name,
+          model: currentGptEngine.name === "enjoyai" ? "openai/tts-1" : "tts-1",
           voice: "alloy",
         },
       },
@@ -171,16 +169,16 @@ export default () => {
         presets = [...gptPresets];
       }
 
-      if (defaultGpt.engine === currentEngine.name) {
+      if (defaultGpt.engine === currentGptEngine.name) {
         defaultGpt.key = "custom";
         defaultGpt.name = t("custom");
-        defaultGpt.configuration.model = currentEngine.models.default;
-        defaultGpt.configuration.tts.engine = currentEngine.name;
+        defaultGpt.configuration.model = currentGptEngine.models.default;
+        defaultGpt.configuration.tts.engine = currentGptEngine.name;
 
         defaultGptPreset = defaultGpt;
       }
 
-      if (defaultTts.engine === currentEngine.name) {
+      if (defaultTts.engine === currentGptEngine.name) {
         defaultTtsPreset = defaultTts;
       }
     } catch (error) {
@@ -189,14 +187,15 @@ export default () => {
 
     const gptPresets = presets.map((preset) =>
       Object.assign({}, preset, {
-        engine: currentEngine?.name,
+        engine: currentGptEngine?.name,
         configuration: {
           ...preset.configuration,
-          model: currentEngine.models.default,
+          model: currentGptEngine.models.default,
           tts: {
             ...preset.configuration.tts,
-            engine: currentEngine.name,
-            model: currentEngine.name === "enjoyai" ? "openai/tts-1" : "tts-1",
+            engine: currentGptEngine.name,
+            model:
+              currentGptEngine.name === "enjoyai" ? "openai/tts-1" : "tts-1",
           },
         },
       })
@@ -211,7 +210,7 @@ export default () => {
 
   useEffect(() => {
     preparePresets();
-  }, [currentEngine]);
+  }, [currentGptEngine]);
 
   return (
     <div className="h-full px-4 py-6 lg:px-8 flex flex-col">

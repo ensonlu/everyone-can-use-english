@@ -35,7 +35,7 @@ import {
 import { useCopyToClipboard } from "@uidotdev/usehooks";
 import { t } from "i18next";
 import { AppSettingsProviderContext } from "@renderer/context";
-import { useConversation, useAiCommand } from "@renderer/hooks";
+import { useSpeech, useAiCommand } from "@renderer/hooks";
 import { formatDateTime } from "@renderer/lib/utils";
 
 export const AssistantMessageComponent = (props: {
@@ -53,7 +53,7 @@ export const AssistantMessageComponent = (props: {
   const [resourcing, setResourcing] = useState<boolean>(false);
   const [shadowing, setShadowing] = useState<boolean>(false);
   const { EnjoyApp } = useContext(AppSettingsProviderContext);
-  const { tts } = useConversation();
+  const { tts } = useSpeech();
   const { summarizeTopic } = useAiCommand();
 
   useEffect(() => {
@@ -183,7 +183,7 @@ export const AssistantMessageComponent = (props: {
 
         {configuration.type === "gpt" && (
           <MarkdownWrapper
-            className="message-content select-text prose dark:prose-invert"
+            className="message-content select-text prose dark:prose-invert max-w-full"
             data-source-type="Message"
             data-source-id={message.id}
           >
@@ -297,12 +297,12 @@ export const AssistantMessageComponent = (props: {
         <SheetContent
           aria-describedby={undefined}
           side="bottom"
-          className="h-screen p-0"
+          className="h-screen p-0 flex flex-col"
           displayClose={false}
           onPointerDownOutside={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
         >
-          <SheetHeader className="flex items-center justify-center h-14">
+          <SheetHeader className="flex items-center justify-center">
             <SheetTitle className="sr-only">{t("shadow")}</SheetTitle>
             <SheetClose>
               <ChevronDownIcon />

@@ -17,10 +17,21 @@ type LlmProviderType = {
 
 type DownloadStateType = {
   name: string;
+  isPaused: boolean;
+  canResume: boolean;
   state: "progressing" | "interrupted" | "completed" | "cancelled";
   received: number;
   total: number;
   speed?: string;
+};
+
+type DecompressTask = {
+  id: string;
+  type: string;
+  title: string;
+  filePath: string;
+  destPath: string;
+  progress?: string;
 };
 
 type NotificationType = {
@@ -29,7 +40,7 @@ type NotificationType = {
 };
 
 type WhisperConfigType = {
-  service: "local" | "azure" | "cloudflare" | "openai";
+  // service: "local" | "azure" | "cloudflare" | "openai";
   availableModels: {
     type: string;
     name: string;
@@ -158,6 +169,10 @@ type ProxyConfigType = {
   url: string;
 };
 
+type VocabularyConfigType = {
+  lookupOnMouseOver: boolean;
+};
+
 type YoutubeVideoType = {
   title: string;
   thumbnail: string;
@@ -174,6 +189,15 @@ type GptEngineSettingType = {
     analyze?: string;
     extractStory?: string;
   };
+  baseUrl?: string;
+  key?: string;
+};
+
+type TtsEngineSettingType = {
+  name: string;
+  model: string;
+  voice: string;
+  language?: string;
   baseUrl?: string;
   key?: string;
 };
@@ -196,4 +220,18 @@ type RecorderConfigType = {
   noiseSuppression: boolean;
   sampleRate: number;
   sampleSize: number;
+};
+
+type DictType = "dict" | "mdict" | "preset";
+
+type DictItem = {
+  type: DictType;
+  text: string;
+  value: string;
+};
+
+type DictSettingType = {
+  default: string;
+  removing: string[];
+  mdicts: MDict[];
 };

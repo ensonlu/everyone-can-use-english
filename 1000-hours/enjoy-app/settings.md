@@ -86,6 +86,54 @@ Enjoy 中提供了很多方便的功能，例如 [提取关键词汇](./webpage#
 
 在默认模型，您还可以对不同的服务选用不同的模型。
 
+## 词典设置
+
+### 词典导入
+
+::: info 设置路径
+软件设置 -> 词典设置 -> 词典导入
+:::
+
+#### 导入 Enjoy 适配过的词典
+
+| 词典名称 | 语言 | 支持发音 | 文件名 | 大小 |
+| -------- | ---- | -------- | ------ | ------ |
+| Longman Dictionary of Contemporary English | 英-英 / 英-中 | 是 | ldocd5.zip | 1.63GB |
+| Collins COBUILD Advanced British EN-CN Dictionary | 英-中 | 否 | ccalecd.zip | 13.879MB |
+| Collins COBUILD Advanced British English Learners Dictionary | 英-英 | 是 | ccabeld.zip | 485.6MB |
+| Oxford Dictionary of English | 英-英 | 否 | oxford_en_mac.zip | 33.6MB |
+| Korean English Dictionary | 韩-英 | 否 | koen_mac.zip | 52.1MB |
+| Japanese English Dictionary | 日-英 | 否 | jaen_mac.zip | 39.8MB |
+| German English Dictionary | 德-英 | 否 | deen_mac.zip | 32.1MB |
+| Russian English Dictionary | 俄-英 | 否 | ruen_mac.zip | 18.1MB |
+
+::: tip 下载词典
+网盘下载： [链接](https://pan.baidu.com/share/init?surl=zK-dHs40HpfYNUEdoYxZUw)
+提取码: 7975
+:::
+
+下载 `zip` 格式的词典文件后，点击 `导入词典` 按钮，即可导入词典。
+
+#### 导入 mdx 词典
+
+mdx 词典是 mdict 格式的词典文件。
+
+如果下载的 mdict 词典只有一个 `.mdx` 文件，则可以直接导入。如果下载的 mdict 词典包含有多个文件，导入时应该选择所有文件，包括 `.mdx` `.mdd` `.js` 等文件。
+
+## 高级设置
+
+### API 设置
+
+设置 Enjoy 服务的 API 地址。默认为 `https://enjoy.bot`。
+
+### 代理设置
+
+为 Enjoy App 设置代理服务。
+
+### 网络状态
+
+检查 Enjoy 客户端与服务端之间的网络状态。
+
 ### OpenAI 配置
 
 ::: info 设置路径
@@ -101,16 +149,6 @@ Enjoy 中提供了很多方便的功能，例如 [提取关键词汇](./webpage#
 ::: warning 接口地址
 由于 OpenAI 在某些地区不提供服务，有些用户会使用第三方提供的中转服务。请务必根据服务提供方的信息填写好 **接口地址**。如果使用时出现报错，可能需要在接口地址结尾加上 `/v1`。
 :::
-
-## 高级设置
-
-### API 设置
-
-设置 Enjoy 服务的 API 地址。默认为 `https://enjoy.bot`。
-
-### 代理设置
-
-为 Enjoy App 设置代理服务。
 
 ### 重置设置选项
 
