@@ -3,7 +3,8 @@ import {
   VideoCard,
   VideosTable,
   VideoEditForm,
-  AddMediaButton,
+  MediaAddButton,
+  LoaderSpin,
 } from "@renderer/components";
 import { t } from "i18next";
 import {
@@ -225,7 +226,7 @@ export const VideosComponent = () => {
               placeholder={t("search")}
               onChange={(e) => setQuery(e.target.value)}
             />
-            <AddMediaButton type="Video" />
+            <MediaAddButton type="Video" />
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="secondary">{t("cleanUp")}</Button>
@@ -251,15 +252,23 @@ export const VideosComponent = () => {
             </AlertDialog>
           </div>
           {videos.length === 0 ? (
-            <div className="flex items-center justify-center h-48 border border-dashed rounded-lg">
-              {t("noData")}
-            </div>
+            loading ? (
+              <LoaderSpin />
+            ) : (
+              <div className="flex items-center justify-center h-48 border border-dashed rounded-lg">
+                {t("noData")}
+              </div>
+            )
           ) : (
             <>
               <TabsContent value="grid">
                 <div className="grid gap-4 grid-cols-4">
                   {videos.map((video) => (
-                    <VideoCard video={video} key={video.id} />
+                    <VideoCard
+                      video={video}
+                      key={video.id}
+                      onDelete={() => setDeleting(video)}
+                    />
                   ))}
                 </div>
               </TabsContent>
@@ -275,7 +284,7 @@ export const VideosComponent = () => {
         </Tabs>
       </div>
 
-      {hasMore && (
+      {!loading && hasMore && (
         <div className="flex items-center justify-center my-4">
           <Button variant="link" onClick={() => fetchVideos()}>
             {t("loadMore")}

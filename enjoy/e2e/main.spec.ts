@@ -60,15 +60,42 @@ test.afterAll(async () => {
   await electronApp.close();
 });
 
-test("validate whisper command", async () => {
+test("validate echogarden recognition by whisper", async () => {
   const res = await page.evaluate(() => {
-    return window.__ENJOY_APP__.whisper.check();
+    return window.__ENJOY_APP__.echogarden.check({
+      engine: "whisper",
+      whisper: {
+        model: "tiny.en",
+        language: "en",
+        encoderProvider: "cpu",
+        decoderProvider: "cpu",
+      },
+    });
   });
   console.info(res.log);
   expect(res.success).toBeTruthy();
+});
 
-  const settings = fs.readJsonSync(path.join(resultDir, "settings.json"));
-  expect(settings.whisper.service).toBe("azure");
+test("validate echogarden recognition by whisper.cpp", async () => {
+  const res = await page.evaluate(() => {
+    return window.__ENJOY_APP__.echogarden.check({
+      engine: "whisper.cpp",
+      whisperCpp: {
+        model: "tiny.en",
+        language: "en",
+      },
+    });
+  });
+  console.info(res.log);
+  expect(res.success).toBeTruthy();
+});
+
+test("validate echogarden alignment", async () => {
+  const res = await page.evaluate(() => {
+    return window.__ENJOY_APP__.echogarden.checkAlign();
+  });
+  console.info(res.log);
+  expect(res.success).toBeTruthy();
 });
 
 test("valid ffmpeg command", async () => {
@@ -76,16 +103,6 @@ test("valid ffmpeg command", async () => {
     return window.__ENJOY_APP__.ffmpeg.check();
   });
   expect(res).toBeTruthy();
-});
-
-test("validate echogarden align command", async () => {
-  const res = await page.evaluate(() => {
-    return window.__ENJOY_APP__.echogarden.check();
-  });
-  expect(res).toBeTruthy();
-
-  const settings = fs.readJsonSync(path.join(resultDir, "settings.json"));
-  expect(settings.whisper.service).toBe("azure");
 });
 
 test("should setup default library path", async () => {

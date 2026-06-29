@@ -1,9 +1,10 @@
 import { useEffect, useState, useReducer, useContext } from "react";
 import {
   AudioCard,
-  AddMediaButton,
+  MediaAddButton,
   AudiosTable,
   AudioEditForm,
+  LoaderSpin,
 } from "@renderer/components";
 import { t } from "i18next";
 import {
@@ -228,7 +229,7 @@ export const AudiosComponent = () => {
               onChange={(e) => setQuery(e.target.value)}
             />
 
-            <AddMediaButton type="Audio" />
+            <MediaAddButton type="Audio" />
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="secondary">{t("cleanUp")}</Button>
@@ -255,15 +256,24 @@ export const AudiosComponent = () => {
           </div>
 
           {audios.length === 0 ? (
-            <div className="flex items-center justify-center h-48 border border-dashed rounded-lg">
-              {t("noData")}
-            </div>
+            loading ? (
+              <LoaderSpin />
+            ) : (
+              <div className="flex items-center justify-center h-48 border border-dashed rounded-lg">
+                {t("noData")}
+              </div>
+            )
           ) : (
             <>
               <TabsContent value="grid">
                 <div className="grid gap-4 grid-cols-5">
                   {audios.map((audio) => (
-                    <AudioCard audio={audio} key={audio.id} />
+                    <AudioCard
+                      audio={audio}
+                      key={audio.id}
+                      onEdit={() => setEditing(audio)}
+                      onDelete={() => setDeleting(audio)}
+                    />
                   ))}
                 </div>
               </TabsContent>
@@ -280,7 +290,7 @@ export const AudiosComponent = () => {
         </Tabs>
       </div>
 
-      {hasMore && (
+      {!loading && hasMore && (
         <div className="flex items-center justify-center my-4">
           <Button variant="link" onClick={() => fetchAudios()}>
             {t("loadMore")}

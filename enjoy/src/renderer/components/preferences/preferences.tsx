@@ -9,7 +9,8 @@ import {
   UserSettings,
   BalanceSettings,
   LibrarySettings,
-  WhisperSettings,
+  SttSettings,
+  TtsSettings,
   OpenaiSettings,
   ProxySettings,
   ResetSettings,
@@ -18,6 +19,9 @@ import {
   LearningLanguageSettings,
   NetworkState,
   RecorderSettings,
+  VocabularySettings,
+  DictSettings,
+  DiskUsage,
 } from "@renderer/components";
 import { useState } from "react";
 import { Tooltip } from "react-tooltip";
@@ -37,11 +41,26 @@ export const Preferences = () => {
           <Separator />
           <LearningLanguageSettings />
           <Separator />
-          <WhisperSettings />
+          <SttSettings />
+          <Separator />
+          <TtsSettings />
           <Separator />
           <DefaultEngineSettings />
           <Separator />
-          <OpenaiSettings />
+        </div>
+      ),
+    },
+    {
+      value: "dict",
+      label: t("dictSettingsShort"),
+      component: () => (
+        <div className="pr-1">
+          <div className="font-semibold mb-4 capitilized">
+            {t("dictSettings")}
+          </div>
+          <VocabularySettings />
+          <Separator />
+          <DictSettings />
           <Separator />
         </div>
       ),
@@ -59,6 +78,8 @@ export const Preferences = () => {
           <ProxySettings />
           <Separator />
           <NetworkState />
+          <Separator />
+          <OpenaiSettings />
           <Separator />
           <RecorderSettings />
           <Separator />
@@ -80,6 +101,8 @@ export const Preferences = () => {
           <UserSettings />
           <Separator />
           <LibrarySettings />
+          <Separator />
+          <DiskUsage />
           <Separator />
           <EmailSettings />
           <Separator />

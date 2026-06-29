@@ -35,7 +35,7 @@ import {
 import { useCopyToClipboard } from "@uidotdev/usehooks";
 import { t } from "i18next";
 import { AppSettingsProviderContext } from "@renderer/context";
-import { useConversation, useAiCommand } from "@renderer/hooks";
+import { useSpeech, useAiCommand } from "@renderer/hooks";
 import { formatDateTime } from "@renderer/lib/utils";
 
 export const AssistantMessageComponent = (props: {
@@ -53,7 +53,7 @@ export const AssistantMessageComponent = (props: {
   const [resourcing, setResourcing] = useState<boolean>(false);
   const [shadowing, setShadowing] = useState<boolean>(false);
   const { EnjoyApp } = useContext(AppSettingsProviderContext);
-  const { tts } = useConversation();
+  const { tts } = useSpeech();
   const { summarizeTopic } = useAiCommand();
 
   useEffect(() => {
@@ -142,7 +142,7 @@ export const AssistantMessageComponent = (props: {
         if (!savePath) return;
 
         toast.promise(EnjoyApp.download.start(speech.src, savePath as string), {
-          loading: t("downloading", { file: speech.filename }),
+          loading: t("downloadingFile", { file: speech.filename }),
           success: () => t("downloadedSuccessfully"),
           error: t("downloadFailed"),
           position: "bottom-right",
@@ -183,7 +183,7 @@ export const AssistantMessageComponent = (props: {
 
         {configuration.type === "gpt" && (
           <MarkdownWrapper
-            className="message-content select-text prose dark:prose-invert"
+            className="message-content select-text prose dark:prose-invert max-w-full"
             data-source-type="Message"
             data-source-id={message.id}
           >
@@ -295,14 +295,15 @@ export const AssistantMessageComponent = (props: {
         onOpenChange={(value) => setShadowing(value)}
       >
         <SheetContent
+          container="main-panel-content"
           aria-describedby={undefined}
           side="bottom"
-          className="h-screen p-0"
+          className="h-content p-0 flex flex-col gap-0"
           displayClose={false}
           onPointerDownOutside={(event) => event.preventDefault()}
           onInteractOutside={(event) => event.preventDefault()}
         >
-          <SheetHeader className="flex items-center justify-center h-14">
+          <SheetHeader className="flex items-center justify-center space-y-0 py-1">
             <SheetTitle className="sr-only">{t("shadow")}</SheetTitle>
             <SheetClose>
               <ChevronDownIcon />

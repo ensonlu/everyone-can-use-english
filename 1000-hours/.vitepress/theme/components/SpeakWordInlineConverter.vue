@@ -12,6 +12,13 @@ watch(() => router.route.data.relativePath, (newVal, oldVal) => {
   }
 }, { immediate: true });
 
+function wrapAssetUrl(url) {
+  if (window.location.hostname !== '1000h.org' && window.location.hostname !== 'localhost') {
+    return `/1000-hours${url}`;
+  }
+  return url;
+}
+
 function buildPlayButton(parent, accent, gender, url) {
   gender = gender || 'male';
   accent = accent || 'us';
@@ -28,7 +35,7 @@ function buildPlayButton(parent, accent, gender, url) {
   const emojiEl = document.createElement('span');
   emojiEl.classList.add('emoji');
 
-  let svg = '/images/speaker-white.svg';
+  let svg = wrapAssetUrl('/images/speaker-white.svg');
   let iconEmoji = '🇺🇸';
   if (accent === 'uk') {
     iconEmoji = '🇬🇧';
@@ -45,7 +52,17 @@ function buildPlayButton(parent, accent, gender, url) {
   btnEl.classList.add(accent);
   btnEl.classList.add(gender);
   btnEl.addEventListener('click', () => {
-    audioEl.play();
+    if (window._playing_audio) {
+      window._audio_ele.pause();
+      window._audio_ele.load();
+    }
+    window._playing_audio = true;
+    window._audio_ele = audioEl;
+    window._audio_ele.play();
+    window._audio_ele.addEventListener('ended', () => {
+      window._playing_audio = false;
+      window._audio_ele = null;
+    })
   })
   // btnEl.append(labelEl)
   btnEl.append(emojiEl)
@@ -80,6 +97,13 @@ function convertToInlineComponent(el) {
   const dataAudio = fillDataAudio(el);
   console.log('inline component', dataAudio)
 
+  // check the hostname.
+  for (let i = 0; i < dataAudio.length; i++) {
+    if (dataAudio[i].value) {
+      dataAudio[i].value = wrapAssetUrl(dataAudio[i].value);
+    }
+  }
+
   const wrapperEl = document.createElement('div')
   wrapperEl.classList.add('speak-word-wrapper')
   const canEl = document.createElement('div')
@@ -99,26 +123,6 @@ function convertToInlineComponent(el) {
       }
       ctrlEl.append(ctrlPartEl);
     }
-    // const ctrlPartEl = document.createElement('div')
-    // ctrlPartEl.classList.add('ctrl-part')
-    // if (dataAudioUs) {
-    //   buildPlayButton(ctrlPartEl, 'us', dataAudioUs)
-    // }
-    // ctrlEl.append(ctrlPartEl);
-
-    // const ctrlPartEl2 = document.createElement('div')
-    // ctrlPartEl2.classList.add('ctrl-part')
-    // if (dataAudioUk) {
-    //   buildPlayButton(ctrlPartEl2, 'uk', dataAudioUk)
-    // }
-    // ctrlEl.append(ctrlPartEl2);
-
-    // const ctrlPartEl3 = document.createElement('div')
-    // ctrlPartEl3.classList.add('ctrl-part')
-    // if (dataAudioOther) {
-    //   buildPlayButton(ctrlPartEl3, 'other', dataAudioOther)
-    // }
-    // ctrlEl.append(ctrlPartEl3);
 
     canEl.append(ctrlEl)
   }

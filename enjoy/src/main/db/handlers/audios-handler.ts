@@ -69,8 +69,10 @@ class AudiosHandler {
       name?: string;
       coverUrl?: string;
       originalText?: string;
+      compressing?: boolean;
     } = {}
   ) {
+    logger.info("Creating audio...", { uri, params });
     let file = uri;
     let source;
     if (uri.startsWith("http")) {
@@ -90,6 +92,7 @@ class AudiosHandler {
         source,
         name: params.name,
         coverUrl: params.coverUrl,
+        compressing: params.compressing,
       });
 
       // create transcription if originalText is provided
@@ -107,7 +110,7 @@ class AudiosHandler {
 
       return audio.toJSON();
     } catch (err) {
-      logger.error(err);
+      logger.error(err.message);
       throw err;
     }
   }
@@ -187,6 +190,17 @@ class AudiosHandler {
     ipcMain.handle("audios-upload", this.upload);
     ipcMain.handle("audios-crop", this.crop);
     ipcMain.handle("audios-clean-up", this.cleanUp);
+  }
+
+  unregister() {
+    ipcMain.removeHandler("audios-find-all");
+    ipcMain.removeHandler("audios-find-one");
+    ipcMain.removeHandler("audios-create");
+    ipcMain.removeHandler("audios-update");
+    ipcMain.removeHandler("audios-destroy");
+    ipcMain.removeHandler("audios-upload");
+    ipcMain.removeHandler("audios-crop");
+    ipcMain.removeHandler("audios-clean-up");
   }
 }
 

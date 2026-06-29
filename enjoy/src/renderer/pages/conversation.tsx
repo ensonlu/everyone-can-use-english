@@ -17,7 +17,7 @@ import { t } from "i18next";
 import {
   DbProviderContext,
   AppSettingsProviderContext,
-  MediaPlayerProvider,
+  MediaShadowProvider,
 } from "@renderer/context";
 import { messagesReducer } from "@renderer/reducers";
 import { v4 as uuidv4 } from "uuid";
@@ -231,9 +231,9 @@ export default () => {
   return (
     <div
       data-testid="conversation-page"
-      className="h-screen px-4 py-6 lg:px-8 flex flex-col"
+      className="h-content px-4 py-4 lg:px-8 flex flex-col"
     >
-      <div className="h-[calc(100vh-3rem)] relative w-full max-w-screen-md mx-auto flex flex-col">
+      <div className="h-[calc(100vh-5rem)] relative w-full max-w-screen-md mx-auto flex flex-col">
         <div className="flex items-center justify-center py-2 relative">
           <div className="cursor-pointer h-6 opacity-50 hover:opacity-100">
             <Link className="flex items-center" to="/conversations">
@@ -249,13 +249,13 @@ export default () => {
               </div>
             </SheetTrigger>
 
-            <SheetContent className="p-0" aria-describedby={undefined}>
+            <SheetContent className="p-0 pt-8" aria-describedby={undefined}>
               <SheetHeader>
                 <SheetTitle className="sr-only">
                   {t("editConversation")}
                 </SheetTitle>
               </SheetHeader>
-              <div className="h-screen">
+              <div className="h-content">
                 <ConversationForm
                   conversation={conversation}
                   onFinish={() => {
@@ -268,7 +268,7 @@ export default () => {
           </Sheet>
         </div>
 
-        <MediaPlayerProvider>
+        <MediaShadowProvider>
           <ScrollArea ref={containerRef} className="px-4 flex-1">
             <div className="messages flex flex-col-reverse gap-6 my-6">
               <div className="w-full h-24"></div>
@@ -315,7 +315,7 @@ export default () => {
               )}
             </div>
           </ScrollArea>
-        </MediaPlayerProvider>
+        </MediaShadowProvider>
 
         <div className="bg-background px-4 absolute w-full bottom-0 left-0 z-50">
           <div className="focus-within:bg-background pr-4 py-2 flex items-end space-x-4 rounded-lg shadow-lg border scrollbar">

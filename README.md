@@ -9,34 +9,33 @@ AI 是当今世界上最好的外语老师，Enjoy 做 AI 最好的助教。
 [![Deploy 1000h website](https://github.com/ZuodaoTech/everyone-can-use-english/actions/workflows/deploy-1000h.yml/badge.svg)](https://github.com/ZuodaoTech/everyone-can-use-english/actions/workflows/deploy-1000h.yml)
 [![Test Enjoy App](https://github.com/ZuodaoTech/everyone-can-use-english/actions/workflows/test-enjoy-app.yml/badge.svg)](https://github.com/ZuodaoTech/everyone-can-use-english/actions/workflows/test-enjoy-app.yml)
 [![Release Enjoy App](https://github.com/ZuodaoTech/everyone-can-use-english/actions/workflows/release-enjoy-app.yml/badge.svg)](https://github.com/ZuodaoTech/everyone-can-use-english/actions/workflows/release-enjoy-app.yml)
+![Latest Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fenjoy.bot%2Fapi%2Fconfig%2Fapp_version&query=%24.version&label=Latest&link=https%3A%2F%2F1000h.org%2Fenjoy-app%2Finstall.html)
 ![Recording Duration](https://img.shields.io/endpoint?url=https%3A%2F%2Fenjoy.bot%2Fapi%2Fbadges%2Frecordings)
 
 ---
 
-## 安装及使用
+## 网页版
 
-下载及使用相关说明，请参阅 [文档](https://1000h.org/enjoy-app/)。
+Enjoy 全新版本已经上线，可访问 [https://enjoy.bot](https://enjoy.bot) 直接使用。
 
-## 预览
+![](./enjoy/snapshots/screenshot-video.png)
+![](./enjoy/snapshots/screenshot-ebook.png)
+![](./enjoy/snapshots/screenshot-flashcard.png)
+![](./enjoy/snapshots/screenshot-course.png)
 
-<div align="center" style="display:flex;overflow:auto;">
-  <img src="./enjoy/snapshots/home.png" alt="Home" width="800" />
+## 浏览器插件
 
-  <img src="./enjoy/snapshots/shadow.png" alt="Home" width="800" />
+Enjoy 浏览器插件已经上线，支持 YouTube 和 Netflix。可访问 [Chrome Web Store](https://chromewebstore.google.com/detail/enjoy-echo/hiijpdndbjfnffibdhajdanjekbnalob) 安装使用。
 
-  <img src="./enjoy/snapshots/assessment.png" alt="Home" width="800" />
+![](./enjoy/snapshots/screenshot-youtube.png)
+![](./enjoy/snapshots/screenshot-netflix.png)
 
-  <img src="./enjoy/snapshots/course.png" alt="Home" width="800" />
+---
 
-  <img src="./enjoy/snapshots/chat.png" alt="Home" width="800" />
-</div>
+## 桌面版
 
-## 开发
+新版桌面版将会是对网页版的套壳和增强，即将发布。
 
-```bash
-yarn install
-yarn enjoy:start
-```
 
 ## 相关阅读
 

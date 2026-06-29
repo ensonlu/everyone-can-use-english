@@ -34,10 +34,11 @@ import { LANGUAGES } from "@/constants";
 import { ChevronDownIcon, ChevronUpIcon, LoaderIcon } from "lucide-react";
 import { parseText } from "media-captions";
 import { milisecondsToTimestamp } from "@/utils";
+import { SttEngineOptionEnum } from "@/types/enums";
 
 const transcriptionSchema = z.object({
   language: z.string(),
-  service: z.string(),
+  service: z.union([z.nativeEnum(SttEngineOptionEnum), z.literal("upload")]),
   text: z.string().optional(),
   isolate: z.boolean().optional(),
 });
@@ -59,13 +60,15 @@ export const TranscriptionCreateForm = (props: {
     originalText,
   } = props;
   const { learningLanguage } = useContext(AppSettingsProviderContext);
-  const { whisperConfig } = useContext(AISettingsProviderContext);
+  const { sttEngine, echogardenSttConfig } = useContext(
+    AISettingsProviderContext
+  );
 
   const form = useForm<z.infer<typeof transcriptionSchema>>({
     resolver: zodResolver(transcriptionSchema),
     values: {
       language: learningLanguage,
-      service: originalText ? "upload" : whisperConfig.service,
+      service: originalText ? "upload" : sttEngine,
       text: originalText,
       isolate: false,
     },
@@ -165,23 +168,46 @@ export const TranscriptionCreateForm = (props: {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="local">{t("local")}</SelectItem>
-                  <SelectItem value="azure">{t("azureAi")}</SelectItem>
-                  <SelectItem value="cloudflare">
-                    {t("cloudflareAi")}
+                  <SelectItem value={SttEngineOptionEnum.LOCAL}>
+                    {t("local")}
                   </SelectItem>
-                  <SelectItem value="openai">OpenAI</SelectItem>
+                  <SelectItem value={SttEngineOptionEnum.ENJOY_AZURE}>
+                    {t("enjoyAzure")}
+                  </SelectItem>
+                  <SelectItem value={SttEngineOptionEnum.ENJOY_CLOUDFLARE}>
+                    {t("enjoyCloudflare")}
+                  </SelectItem>
+                  <SelectItem value={SttEngineOptionEnum.OPENAI}>
+                    OpenAI
+                  </SelectItem>
                   <SelectItem value="upload">{t("upload")}</SelectItem>
                 </SelectContent>
               </Select>
               <FormDescription>
-                {form.watch("service") === "local" &&
-                  t("localSpeechToTextDescription")}
-                {form.watch("service") === "azure" &&
-                  t("azureSpeechToTextDescription")}
-                {form.watch("service") === "cloudflare" &&
-                  t("cloudflareSpeechToTextDescription")}
-                {form.watch("service") === "openai" &&
+                {form.watch("service") === SttEngineOptionEnum.LOCAL &&
+                  echogardenSttConfig && (
+                    <>
+                      <div>{t("localSpeechToTextDescription")}</div>
+                      <div>
+                        * {t("model")}: {echogardenSttConfig.engine} /{" "}
+                        {
+                          echogardenSttConfig[
+                            echogardenSttConfig.engine?.replace(
+                              ".cpp",
+                              "Cpp"
+                            ) as "whisper" | "whisperCpp"
+                          ]?.model
+                        }
+                      </div>
+                    </>
+                  )}
+
+                {form.watch("service") === SttEngineOptionEnum.ENJOY_AZURE &&
+                  t("enjoyAzureSpeechToTextDescription")}
+                {form.watch("service") ===
+                  SttEngineOptionEnum.ENJOY_CLOUDFLARE &&
+                  t("enjoyCloudflareSpeechToTextDescription")}
+                {form.watch("service") === SttEngineOptionEnum.OPENAI &&
                   t("openaiSpeechToTextDescription")}
                 {form.watch("service") === "upload" &&
                   t("uploadSpeechToTextDescription")}
@@ -189,6 +215,7 @@ export const TranscriptionCreateForm = (props: {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="language"
@@ -324,7 +351,12 @@ export const TranscriptionCreateForm = (props: {
               {t("cancel")}
             </Button>
           )}
-          <Button disabled={transcribing} type="submit" variant="default">
+          <Button
+            data-testid="transcribe-continue-button"
+            disabled={transcribing}
+            type="submit"
+            variant="default"
+          >
             {transcribing && <LoaderIcon className="animate-spin w-4 mr-2" />}
             {t("continue")}
           </Button>

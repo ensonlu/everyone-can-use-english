@@ -8,10 +8,12 @@ import {
 import { toast } from "@renderer/components/ui";
 import { TimelineEntry } from "echogarden/dist/utilities/Timeline.d.js";
 import { MAGIC_TOKEN_REGEX, END_OF_SENTENCE_REGEX } from "@/constants";
+import { SttEngineOptionEnum } from "@/types/enums";
+import { t } from "i18next";
 
 export const useTranscriptions = (media: AudioType | VideoType) => {
-  const { whisperConfig } = useContext(AISettingsProviderContext);
-  const { EnjoyApp, learningLanguage } = useContext(
+  const { sttEngine } = useContext(AISettingsProviderContext);
+  const { EnjoyApp, learningLanguage, webApi } = useContext(
     AppSettingsProviderContext
   );
   const { addDblistener, removeDbListener } = useContext(DbProviderContext);
@@ -19,10 +21,11 @@ export const useTranscriptions = (media: AudioType | VideoType) => {
   const { transcribe, output } = useTranscribe();
   const [transcribingProgress, setTranscribingProgress] = useState<number>(0);
   const [transcribing, setTranscribing] = useState<boolean>(false);
+  const [creating, setCreating] = useState<boolean>(false);
   const [transcribingOutput, setTranscribingOutput] = useState<string>("");
-  const [service, setService] = useState<
-    WhisperConfigType["service"] | "upload"
-  >(whisperConfig.service);
+  const [service, setService] = useState<SttEngineOptionEnum | "upload">(
+    sttEngine
+  );
 
   const onTransactionUpdate = (event: CustomEvent) => {
     if (!transcription) return;
@@ -40,36 +43,83 @@ export const useTranscriptions = (media: AudioType | VideoType) => {
     async (): Promise<TranscriptionType | void> => {
       if (!media) return;
       if (transcription?.targetId === media.id) return;
+      if (creating) return;
 
-      return EnjoyApp.transcriptions
-        .findOrCreate({
+      try {
+        setCreating(true);
+        const tr = await EnjoyApp.transcriptions.findOrCreate({
           targetId: media.id,
           targetType: media.mediaType,
-        })
-        .then((t) => {
-          if (t.result && !t.result["timeline"]) {
-            t.result = {
-              originalText: t.result?.originalText,
-            };
-          }
-          setTranscription(t);
-          return t;
-        })
-        .catch((err) => {
-          toast.error(err.message);
         });
+
+        if (!tr?.result?.timeline) {
+          tr.result = {
+            originalText: tr.result?.originalText,
+          };
+        }
+
+        const transcriptionOnline = await findTranscriptionOnline();
+        if (transcriptionOnline && !tr?.result?.timeline) {
+          await EnjoyApp.transcriptions.update(tr.id, {
+            state: "finished",
+            result: transcriptionOnline.result,
+            engine: transcriptionOnline.engine,
+            model: transcriptionOnline.model,
+            language: transcriptionOnline.language || media.language,
+          });
+          setTranscription(transcriptionOnline);
+          toast.success(t("downloadedTranscriptionFromCloud"));
+          if (transcribing) {
+            abortGenerateTranscription();
+          }
+          return transcriptionOnline;
+        } else {
+          setTranscription(tr);
+          return tr;
+        }
+      } catch (err) {
+        console.error(err);
+        return null;
+      } finally {
+        setCreating(false);
+      }
     };
+
+  const findTranscriptionOnline = async () => {
+    if (!media) return;
+
+    try {
+      const result = await webApi.transcriptions({
+        targetMd5: media.md5,
+        items: 10,
+      });
+      if (result.transcriptions.length) {
+        for (const tr of result.transcriptions) {
+          if (validateTranscription(tr)) {
+            return tr;
+          } else {
+            console.warn(`Invalid transcription: ${tr.id}`);
+          }
+        }
+      } else {
+        return null;
+      }
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  };
 
   const generateTranscription = async (params?: {
     originalText?: string;
     language?: string;
-    service?: WhisperConfigType["service"] | "upload";
+    service?: SttEngineOptionEnum | "upload";
     isolate?: boolean;
   }) => {
     let {
       originalText,
       language = learningLanguage,
-      service = whisperConfig.service,
+      service = sttEngine,
       isolate = false,
     } = params || {};
     setService(service);
@@ -208,6 +258,21 @@ export const useTranscriptions = (media: AudioType | VideoType) => {
     return timeline;
   };
 
+  const validateTranscription = (transcription: TranscriptionType) => {
+    if (!transcription) return;
+
+    const { timeline, transcript } = transcription.result;
+    if (!timeline || !transcript) {
+      return false;
+    }
+
+    if (timeline[0]?.type !== "sentence") {
+      return false;
+    }
+
+    return true;
+  };
+
   /*
    * find or create transcription
    */
@@ -235,26 +300,17 @@ export const useTranscriptions = (media: AudioType | VideoType) => {
   useEffect(() => {
     if (!transcribing) return;
 
-    if (service === "local") {
-      EnjoyApp.whisper.onProgress((_, p: number) => {
-        if (p > 100) p = 100;
-        setTranscribingProgress(p);
-      });
-    }
-
     EnjoyApp.app.onCmdOutput((_, output) => {
       setTranscribingOutput(output);
     });
 
     return () => {
-      EnjoyApp.whisper.removeProgressListeners();
       EnjoyApp.app.removeCmdOutputListeners();
       setTranscribingOutput(null);
     };
   }, [media, service, transcribing]);
 
   const abortGenerateTranscription = () => {
-    EnjoyApp.whisper.abort();
     setTranscribing(false);
   };
 

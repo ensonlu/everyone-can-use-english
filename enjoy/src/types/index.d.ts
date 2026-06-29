@@ -3,7 +3,21 @@
 // whether you're running in development or production).
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
+declare module "foliate-js/view.js";
+declare module "foliate-js/epub.js";
 declare module "compromise-paragraphs";
+
+declare module "segment" {
+  class Segment {
+    useDefault(): void;
+    loadDict(path: string): void;
+    doSegment(
+      text: string,
+      options: { stripPunctuation: boolean }
+    ): Array<{ w: string }>;
+  }
+  export = Segment;
+}
 
 type SupportedLlmProviderType = "enjoyai" | "openai";
 
@@ -17,10 +31,21 @@ type LlmProviderType = {
 
 type DownloadStateType = {
   name: string;
+  isPaused: boolean;
+  canResume: boolean;
   state: "progressing" | "interrupted" | "completed" | "cancelled";
   received: number;
   total: number;
   speed?: string;
+};
+
+type DecompressTask = {
+  id: string;
+  type: string;
+  title: string;
+  filePath: string;
+  destPath: string;
+  progress?: string;
 };
 
 type NotificationType = {
@@ -29,7 +54,7 @@ type NotificationType = {
 };
 
 type WhisperConfigType = {
-  service: "local" | "azure" | "cloudflare" | "openai";
+  // service: "local" | "azure" | "cloudflare" | "openai";
   availableModels: {
     type: string;
     name: string;
@@ -158,6 +183,10 @@ type ProxyConfigType = {
   url: string;
 };
 
+type VocabularyConfigType = {
+  lookupOnMouseOver: boolean;
+};
+
 type YoutubeVideoType = {
   title: string;
   thumbnail: string;
@@ -174,6 +203,15 @@ type GptEngineSettingType = {
     analyze?: string;
     extractStory?: string;
   };
+  baseUrl?: string;
+  key?: string;
+};
+
+type TtsEngineSettingType = {
+  name: string;
+  model: string;
+  voice: string;
+  language?: string;
   baseUrl?: string;
   key?: string;
 };
@@ -196,4 +234,58 @@ type RecorderConfigType = {
   noiseSuppression: boolean;
   sampleRate: number;
   sampleSize: number;
+};
+
+type DictType = "dict" | "mdict" | "preset";
+
+type DictItem = {
+  type: DictType;
+  text: string;
+  value: string;
+};
+
+type DictSettingType = {
+  default: string;
+  removing: string[];
+  mdicts: MDict[];
+};
+
+type TranscribeParamsType = {
+  mediaSrc: string | Blob;
+  params?: {
+    targetId?: string;
+    targetType?: string;
+    originalText?: string;
+    language: string;
+    service: SttEngineOptionEnum | "upload";
+    isolate?: boolean;
+    align?: boolean;
+  };
+};
+
+type TranscribeResultType = {
+  engine: string;
+  model: string;
+  transcript: string;
+  timeline: TimelineEntry[];
+  originalText?: string;
+  tokenId?: number;
+  url: string;
+};
+
+type EchogardenSttConfigType = {
+  engine: "whisper" | "whisper.cpp";
+  whisper: {
+    model: string;
+    temperature?: number;
+    prompt?: string;
+    encoderProvider?: "cpu" | "dml" | "cuda";
+    decoderProvider?: "cpu" | "dml" | "cuda";
+  };
+  whisperCpp?: {
+    model: string;
+    temperature?: number;
+    prompt?: string;
+    enableGPU?: boolean;
+  };
 };

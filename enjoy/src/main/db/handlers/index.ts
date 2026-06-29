@@ -12,4 +12,6 @@ export * from "./recordings-handler";
 export * from "./speeches-handler";
 export * from "./segments-handler";
 export * from "./transcriptions-handler";
+export * from "./user-settings-handler";
 export * from "./videos-handler";
+export * from "./documents-handler";

@@ -2,7 +2,6 @@ import {
   AfterCreate,
   AfterUpdate,
   AfterDestroy,
-  BeforeCreate,
   BelongsTo,
   Table,
   Column,
@@ -14,9 +13,15 @@ import {
   DataType,
   Unique,
 } from "sequelize-typescript";
-import { Audio, Recording, Speech, Transcription } from "@main/db/models";
+import {
+  Audio,
+  Recording,
+  Speech,
+  Transcription,
+  UserSetting,
+} from "@main/db/models";
 import settings from "@main/settings";
-import { AudioFormats, VideoFormats, WEB_API_URL } from "@/constants";
+import { AudioFormats, MIME_TYPES, VideoFormats } from "@/constants";
 import { hashFile } from "@main/utils";
 import path from "path";
 import fs from "fs-extra";
@@ -29,8 +34,6 @@ import { Client } from "@/api";
 import startCase from "lodash/startCase";
 import { v5 as uuidv5 } from "uuid";
 import FfmpegWrapper from "@main/ffmpeg";
-
-const SIZE_LIMIT = 1024 * 1024 * 100; // 100MB
 
 const logger = log.scope("db/models/video");
 
@@ -82,7 +85,10 @@ export class Video extends Model<Video> {
   })
   transcription: Transcription;
 
-  @BelongsTo(() => Speech, "md5")
+  @BelongsTo(() => Speech, {
+    foreignKey: "md5",
+    constraints: false,
+  })
   speech: Speech;
 
   @Default(0)
@@ -121,7 +127,13 @@ export class Video extends Model<Video> {
 
   @Column(DataType.VIRTUAL)
   get src(): string {
-    if (this.filePath) {
+    if (this.compressedFilePath) {
+      return `enjoy://${path.posix.join(
+        "library",
+        "videos",
+        this.getDataValue("md5") + ".compressed.mp4"
+      )}`;
+    } else if (this.originalFilePath) {
       return `enjoy://${path.posix.join(
         "library",
         "videos",
@@ -147,6 +159,10 @@ export class Video extends Model<Video> {
     return this.getDataValue("md5") + this.extname;
   }
 
+  get mimeType(): string {
+    return MIME_TYPES[this.extname.toLowerCase()] || "video/mp4";
+  }
+
   get extname(): string {
     return (
       this.getDataValue("metadata").extname ||
@@ -156,10 +172,28 @@ export class Video extends Model<Video> {
   }
 
   get filePath(): string {
+    return this.compressedFilePath || this.originalFilePath;
+  }
+
+  get originalFilePath(): string {
     const file = path.join(
       settings.userDataPath(),
       "videos",
       this.getDataValue("md5") + this.extname
+    );
+
+    if (fs.existsSync(file)) {
+      return file;
+    } else {
+      return null;
+    }
+  }
+
+  get compressedFilePath(): string {
+    const file = path.join(
+      settings.userDataPath(),
+      "videos",
+      `${this.getDataValue("md5")}.compressed.mp4`
     );
 
     if (fs.existsSync(file)) {
@@ -182,7 +216,7 @@ export class Video extends Model<Video> {
     const finalFile = path.join(settings.cachePath(), `${hash}.png`);
     fs.renameSync(coverFile, finalFile);
 
-    storage.put(hash, finalFile).then((result) => {
+    storage.put(hash, finalFile, "image/png").then((result) => {
       logger.debug("cover upload result:", result.data);
       if (result.data.success) {
         this.update({ coverUrl: storage.getUrl(hash) });
@@ -194,7 +228,7 @@ export class Video extends Model<Video> {
     if (this.isUploaded && !force) return;
 
     return storage
-      .put(this.md5, this.filePath)
+      .put(this.md5, this.filePath, this.mimeType)
       .then((result) => {
         logger.debug("upload result:", result.data);
         if (result.data.success) {
@@ -214,7 +248,7 @@ export class Video extends Model<Video> {
 
     const webApi = new Client({
       baseUrl: settings.apiUrl(),
-      accessToken: settings.getSync("user.accessToken") as string,
+      accessToken: (await UserSetting.accessToken()) as string,
       logger,
     });
 
@@ -241,25 +275,14 @@ export class Video extends Model<Video> {
     return output;
   }
 
-  @BeforeCreate
-  static async setupDefaultAttributes(video: Video) {
-    try {
-      const ffmpeg = new Ffmpeg();
-      const fileMetadata = await ffmpeg.generateMetadata(video.filePath);
-      video.metadata = Object.assign(video.metadata || {}, {
-        ...fileMetadata,
-        duration: fileMetadata.format.duration,
-      });
-    } catch (err) {
-      logger.error("failed to generate metadata", err.message);
-    }
-  }
-
   @AfterCreate
   static autoSync(video: Video) {
-    // auto sync should not block the main thread
-    video.sync().catch(() => {});
-    video.generateCover().catch(() => {});
+    video.sync().catch((err) => {
+      logger.error("sync video error", video.id, err);
+    });
+    video.generateCover().catch((err) => {
+      logger.error("generate cover error", video.id, err);
+    });
   }
 
   @AfterCreate
@@ -270,7 +293,9 @@ export class Video extends Model<Video> {
   @AfterUpdate
   static notifyForUpdate(video: Video) {
     this.notify(video, "update");
-    video.sync().catch(() => {});
+    video.sync().catch((err) => {
+      logger.error("sync video error", video.id, err);
+    });
   }
 
   @AfterDestroy
@@ -279,7 +304,7 @@ export class Video extends Model<Video> {
   }
 
   @AfterDestroy
-  static cleanupFile(video: Video) {
+  static async cleanupFile(video: Video) {
     if (video.filePath) {
       fs.remove(video.filePath);
     }
@@ -292,7 +317,7 @@ export class Video extends Model<Video> {
 
     const webApi = new Client({
       baseUrl: settings.apiUrl(),
-      accessToken: settings.getSync("user.accessToken") as string,
+      accessToken: (await UserSetting.accessToken()) as string,
       logger: log.scope("video/cleanupFile"),
     });
 
@@ -308,8 +333,11 @@ export class Video extends Model<Video> {
       description?: string;
       source?: string;
       coverUrl?: string;
+      compressing?: boolean;
     }
   ): Promise<Audio | Video> {
+    const { compressing = true } = params || {};
+
     // Check if file exists
     try {
       fs.accessSync(filePath, fs.constants.R_OK);
@@ -325,11 +353,6 @@ export class Video extends Model<Video> {
       throw new Error(t("models.video.fileNotSupported", { file: filePath }));
     }
 
-    const stats = fs.statSync(filePath);
-    if (stats.size > SIZE_LIMIT) {
-      throw new Error(t("models.video.fileTooLarge", { file: filePath }));
-    }
-
     const md5 = await hashFile(filePath, { algo: "md5" });
 
     // check if file already exists
@@ -338,7 +361,10 @@ export class Video extends Model<Video> {
         md5,
       },
     });
-    if (existing) {
+    if (!!existing) {
+      logger.warn("Video already exists:", existing.id, existing.name);
+      existing.changed("updatedAt", true);
+      existing.update({ updatedAt: new Date() });
       return existing;
     }
 
@@ -348,15 +374,35 @@ export class Video extends Model<Video> {
     logger.debug("Generated ID:", id);
 
     const destDir = path.join(settings.userDataPath(), "videos");
-    const destFile = path.join(destDir, `${md5}${extname}`);
+    const destFile = path.join(
+      destDir,
+      compressing ? `${md5}.compressed.mp4` : `${md5}${extname}`
+    );
+
+    let metadata = {
+      extname,
+    };
 
     // Copy file to library
     try {
       // Create directory if not exists
       fs.ensureDirSync(destDir);
 
-      // Copy file
-      fs.copySync(filePath, destFile);
+      // fetch metadata
+      const ffmpeg = new FfmpegWrapper();
+      const fileMetadata = await ffmpeg.generateMetadata(filePath);
+      metadata = Object.assign(metadata, {
+        ...fileMetadata,
+        duration: fileMetadata.format.duration,
+      });
+
+      if (compressing) {
+        // Compress file to destFile
+        await ffmpeg.compressVideo(filePath, destFile);
+      } else {
+        // Copy file
+        fs.copyFileSync(filePath, destFile);
+      }
 
       // Check if file copied
       fs.accessSync(destFile, fs.constants.R_OK);
@@ -377,9 +423,7 @@ export class Video extends Model<Video> {
       name,
       description,
       coverUrl,
-      metadata: {
-        extname,
-      },
+      metadata,
     });
 
     return record.save().catch((err) => {
